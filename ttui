@@ -1,0 +1,61 @@
+#!/bin/bash
+
+function print_centered {
+     [[ $# == 0 ]] && return 1
+
+     declare -i TERM_COLS
+     TERM_COLS="$(stty size | cut -d" " -f2)"
+     declare -i str_len
+     str_len="${#1}"
+     [[ $str_len -ge $TERM_COLS ]] && {
+          echo "$1";
+          return 0;
+     }
+
+     declare -i filler_len
+     filler_len="$(( (TERM_COLS - str_len) / 2 ))"
+     [[ $# -ge 2 ]] && ch="${2:0:1}" || ch=" "
+     filler=""
+     for (( i = 0; i < filler_len; i++ )); do
+          filler="${filler}${ch}"
+     done
+
+     printf "%s%s%s" "$filler" "$1" "$filler"
+     [[ $(( (TERM_COLS - str_len) % 2 )) -ne 0 ]] && printf "%s" "${ch}"
+     printf "\n"
+
+     return 0
+}
+. ~/.config/ttui.config
+
+if [[ "$1" == "-c" ]]
+then
+	read -r -p "Source: " USER_SOURCE
+	SOURCE_LANG=$(grep -i "$USER_SOURCE" ./langs | cut -d" " -f1)
+	if [ -z "$SOURCE_LANG" ]
+	then
+		echo "Not a valid language"
+		exit 1
+	fi
+	read -r -p "Target: " USER_TARGET
+	TARGET_LANG=$(grep -i "$USER_TARGET" ./langs | cut -d" " -f1)
+	if [ -z "$TARGET_LANG" ]
+	then
+		echo "Not a valid language"
+		exit 1
+	fi
+	print_centered "Translating from "$(grep "$SOURCE_LANG\s" ./langs | cut -d" " -f2)" to "$(grep "$TARGET_LANG\s" ./langs | cut -d" " -f2)""
+	source ./with translate -s "$SOURCE_LANG" -t "$TARGET_LANG"
+
+
+elif [[ "$1" == "-t" ]]
+then
+	print_centered "Translating from "$(grep "$TARGET\s" ./langs | cut -d" " -f2)" to "$(grep "$SOURCE\s" ./langs | cut -d" " -f2)""
+	source ./with translate -s $TARGET -t $SOURCE
+
+
+
+else
+	print_centered "Translating from "$(grep "$SOURCE\s" ./langs | cut -d" " -f2)" to "$(grep "$TARGET\s" ./langs | cut -d" " -f2)""
+	source ./with translate -s $SOURCE -t $TARGET
+fi
